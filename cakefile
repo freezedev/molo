@@ -13,6 +13,7 @@ task 'build:production', ->
 
 task 'build:examples', ->
   compile "#{EXAMPLES}/simple/main.coffee", "#{EXAMPLES}/simple/main.js"
+  compile "#{EXAMPLES}/files/*.coffee", "#{EXAMPLES}/files/*"
 
 task 'build', ->
   invoke 'build:debug'
