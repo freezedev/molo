@@ -16,9 +16,9 @@
     cache = {};
     queue = {};
     moloFunc = function(name, defines) {
-      var cacheDeps, context, define, deps, i, key, value, _i, _len;
-      if (!(name && defines)) {
-        return void 0;
+      var cacheDeps, context, curDeps, d, define, deps, i, maxDeps, modDefinition, modName, q, queueList, _i, _j, _k, _len, _len1, _len2, _ref, _ref1;
+      if (typeof name !== 'string') {
+        _ref = [void 0, name], name = _ref[0], defines = _ref[1];
       }
       if (typeof defines === 'function') {
         define = defines;
@@ -45,25 +45,52 @@
         }
       }
       cache[name] = define.apply(context, cacheDeps);
-      if (Object.keys(queue).length > 0) {
-        for (key in queue) {
-          if (!__hasProp.call(queue, key)) continue;
-          value = queue[key];
-          module(key, value);
+      queueList = Object.keys(queue);
+      for (_j = 0, _len1 = queueList.length; _j < _len1; _j++) {
+        q = queueList[_j];
+        maxDeps = queue[q].require.length;
+        curDeps = 0;
+        _ref1 = queue[q].require;
+        for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
+          d = _ref1[_k];
+          if (cache[d]) {
+            curDeps++;
+          }
         }
-        delete queue[key];
+        console.log("c: " + curDeps + " max: " + maxDeps);
+        if (curDeps === maxDeps) {
+          modName = q;
+          modDefinition = queue[q];
+          delete queue[q];
+          moloFunc(modName, modDefinition);
+        }
       }
       return null;
     };
     moloConfig = {};
     root.molo = moloFunc;
     root.molo.config = moloConfig;
-    root.module = moloFunc;
-    return root.define = function(name, deps, defines) {
+    root.molo.clear = function() {
+      cache = {};
+      return queue = {};
+    };
+    root.molo["delete"] = function(name) {
+      if (cache[name]) {
+        delete cache[name];
+      }
+      if (queue[name]) {
+        return delete queue[name];
+      }
+    };
+    root.module || (root.module = moloFunc);
+    root.define = function(name, deps, defines) {
       return moloFunc(name, {
         require: deps,
         define: defines
       });
+    };
+    return root.define.amd = {
+      jQuery: true
     };
   })(typeof exports !== "undefined" && exports !== null ? exports : this);
 
