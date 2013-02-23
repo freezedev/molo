@@ -1,4 +1,7 @@
 flour = require 'flour'
+fs = require 'fs'
+path = require 'path'
+require 'es6-shim'
 
 SOURCE = 'src'
 OUTPUT = 'js'
@@ -12,8 +15,17 @@ task 'build:production', ->
     minify "#{OUTPUT}/molo.js", "#{OUTPUT}/molo.min.js"
 
 task 'build:examples', ->
-  compile "#{EXAMPLES}/simple/main.coffee", "#{EXAMPLES}/simple/main.js"
-  compile "#{EXAMPLES}/files/*.coffee", "#{EXAMPLES}/files/*"
+  exampleFolderArray = fs.readdirSync("#{EXAMPLES}")
+
+  for i in exampleFolderArray
+    fileArray = []
+    exampleFolderContent = fs.readdirSync(path.join(EXAMPLES, i))
+
+    fileArray = do -> 
+      for j in exampleFolderContent
+        if j.endsWith('.coffee') then fileArray.push j else continue
+
+    if fileArray.length > 0 then compile "#{EXAMPLES}/#{i}/*.coffee", "#{EXAMPLES}/#{i}/*"   
 
 task 'build', ->
   invoke 'build:debug'
