@@ -1,6 +1,9 @@
 # ES 5 compability function
 Object.keys or= (o) -> name for own name of o
 
+# CommonJS flag
+isCommonJS = exports?
+
 do (root = exports ? this) ->
   cache = {}
   queue = {}
@@ -21,12 +24,41 @@ do (root = exports ? this) ->
 
     # Get the result of cached dependencies
     cacheDeps = []
+
+    # Skip flag to skip the rest of the function
+    skipFunc = false
+
     for i in deps
       if cache[i]
         cacheDeps.push cache[i]
       else
+        unless isCommonJS
+          scriptElem = root.document.createElement 'script'
+          scriptElem.async = true
+
+          prePath = ''
+          pathArray = Object.keys(root.molo.paths)
+
+          for p in pathArray
+            # TODO: Problem: 'abc'.indexOf('a') === 'abc'.indexOf('ab')
+            if root.molo.paths[p] and name.indexOf(root.molo.paths[p]) is 0
+              prePath = root.molo.paths[p]
+
+          scriptPath = if prePath then "#{prePath}/#{i}.js" else "#{i}.js"
+
+          scriptElem.src = scriptPath
+
+          root.document.head.appendChild scriptElem
+
         queue[name] = defines
-        return undefined
+
+        # Set skip flag
+        # We need to go through the rest of the dependencies,
+        # but not the rest of the function
+        skipFunc = true
+
+    # Skip function now
+    return undefined if skipFunc
 
     # Execute factory function and store it in cache
     cache[name] = define.apply context, cacheDeps
@@ -50,10 +82,8 @@ do (root = exports ? this) ->
 
     null
 
-  moloConfig = {}
-
   root.molo = moloFunc
-  root.molo.config = moloConfig
+  root.molo.paths = {}
   root.molo.clear = ->
     cache = {}
     queue = {}
