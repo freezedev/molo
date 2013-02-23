@@ -57,7 +57,6 @@
             curDeps++;
           }
         }
-        console.log("c: " + curDeps + " max: " + maxDeps);
         if (curDeps === maxDeps) {
           modName = q;
           modDefinition = queue[q];
