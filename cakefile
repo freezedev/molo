@@ -2,19 +2,19 @@ flour = require 'flour'
 
 SOURCE = 'src'
 OUTPUT = 'js'
-
-minifier = flour.minifiers['js']
+EXAMPLES = 'examples'
 
 task 'build:debug', -> 
-  flour.minifiers = null
-
   compile "#{SOURCE}/molo.coffee", "#{OUTPUT}/molo.js"
 
 task 'build:production', ->
-  flour.minifiers = minifier
+  compile "#{SOURCE}/molo.coffee", "#{OUTPUT}/molo.js", ->
+    minify "#{OUTPUT}/molo.js", "#{OUTPUT}/molo.min.js"
 
-  compile "#{SOURCE}/molo.coffee", "#{OUTPUT}/molo.min.js"
+task 'build:examples', ->
+  compile "#{EXAMPLES}/simple/main.coffee", "#{EXAMPLES}/simple/main.js"
 
 task 'build', ->
   invoke 'build:debug'
   invoke 'build:production'
+  invoke 'build:examples'
