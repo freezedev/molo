@@ -1,5 +1,5 @@
 (function() {
-  var isCommonJS,
+  var hasExtension, isCommonJS, isJavaScriptFile,
     __hasProp = {}.hasOwnProperty;
 
   Object.keys || (Object.keys = function(o) {
@@ -12,16 +12,40 @@
     return _results;
   });
 
+  Array.isArray || (Array.isArray = function(a) {
+    return a.push === Array.prototype.push && (a.length != null);
+  });
+
   isCommonJS = typeof exports !== "undefined" && exports !== null;
 
+  hasExtension = function(filename, extension) {
+    if (filename == null) {
+      return void 0;
+    }
+    return filename.lastIndexOf(extension) === filename.length - extension;
+  };
+
+  isJavaScriptFile = function(filename) {
+    return hasExtension(filename, '.js');
+  };
+
   (function(root) {
-    var cache, moloFunc, queue;
+    var cache, moloFunc, pathSep, queue;
     cache = {};
     queue = {};
+    pathSep = '/';
     moloFunc = function(name, defines) {
       var cacheDeps, context, curDeps, d, define, deps, i, maxDeps, modDefinition, modName, p, pathArray, prePath, q, queueList, scriptElem, scriptPath, skipFunc, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
+      skipFunc = false;
       if (typeof name !== 'string') {
-        _ref = [void 0, name], name = _ref[0], defines = _ref[1];
+        if (Array.isArray(name)) {
+          defines = {
+            require: name
+          };
+          skipFunc = true;
+        } else {
+          _ref = [void 0, name], name = _ref[0], defines = _ref[1];
+        }
       }
       if (typeof defines === 'function') {
         define = defines;
@@ -38,7 +62,6 @@
         deps = [deps];
       }
       cacheDeps = [];
-      skipFunc = false;
       for (_i = 0, _len = deps.length; _i < _len; _i++) {
         i = deps[_i];
         if (cache[i]) {
@@ -47,15 +70,19 @@
           if (!isCommonJS) {
             scriptElem = root.document.createElement('script');
             scriptElem.async = true;
-            prePath = '';
-            pathArray = Object.keys(root.molo.paths);
-            for (_j = 0, _len1 = pathArray.length; _j < _len1; _j++) {
-              p = pathArray[_j];
-              if (root.molo.paths[p] && name.indexOf(root.molo.paths[p]) === 0) {
-                prePath = root.molo.paths[p];
+            if (isJavaScriptFile(root.molo.paths[name])) {
+              scriptPath = root.molo.paths[name];
+            } else {
+              prePath = root.molo.basePath ? "" + basePath : '';
+              pathArray = Object.keys(root.molo.paths);
+              for (_j = 0, _len1 = pathArray.length; _j < _len1; _j++) {
+                p = pathArray[_j];
+                if (root.molo.paths[p] && name.indexOf("" + root.molo.paths[p] + pathSep) === 0) {
+                  prePath = root.molo.paths[p];
+                }
               }
+              scriptPath = prePath ? "" + prePath + pathSep + i + ".js" : "" + i + ".js";
             }
-            scriptPath = prePath ? "" + prePath + "/" + i + ".js" : "" + i + ".js";
             scriptElem.src = scriptPath;
             root.document.head.appendChild(scriptElem);
           }
@@ -89,6 +116,7 @@
       return null;
     };
     root.molo = moloFunc;
+    root.molo.basePath = '';
     root.molo.paths = {};
     root.molo.clear = function() {
       cache = {};
