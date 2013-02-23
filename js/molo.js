@@ -1,5 +1,6 @@
 (function() {
-  var __hasProp = {}.hasOwnProperty;
+  var isCommonJS,
+    __hasProp = {}.hasOwnProperty;
 
   Object.keys || (Object.keys = function(o) {
     var name, _results;
@@ -11,12 +12,14 @@
     return _results;
   });
 
+  isCommonJS = typeof exports !== "undefined" && exports !== null;
+
   (function(root) {
-    var cache, moloConfig, moloFunc, queue;
+    var cache, moloFunc, queue;
     cache = {};
     queue = {};
     moloFunc = function(name, defines) {
-      var cacheDeps, context, curDeps, d, define, deps, i, maxDeps, modDefinition, modName, q, queueList, _i, _j, _k, _len, _len1, _len2, _ref, _ref1;
+      var cacheDeps, context, curDeps, d, define, deps, i, maxDeps, modDefinition, modName, p, pathArray, prePath, q, queueList, scriptElem, scriptPath, skipFunc, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
       if (typeof name !== 'string') {
         _ref = [void 0, name], name = _ref[0], defines = _ref[1];
       }
@@ -35,24 +38,43 @@
         deps = [deps];
       }
       cacheDeps = [];
+      skipFunc = false;
       for (_i = 0, _len = deps.length; _i < _len; _i++) {
         i = deps[_i];
         if (cache[i]) {
           cacheDeps.push(cache[i]);
         } else {
+          if (!isCommonJS) {
+            scriptElem = root.document.createElement('script');
+            scriptElem.async = true;
+            prePath = '';
+            pathArray = Object.keys(root.molo.paths);
+            for (_j = 0, _len1 = pathArray.length; _j < _len1; _j++) {
+              p = pathArray[_j];
+              if (root.molo.paths[p] && name.indexOf(root.molo.paths[p]) === 0) {
+                prePath = root.molo.paths[p];
+              }
+            }
+            scriptPath = prePath ? "" + prePath + "/" + i + ".js" : "" + i + ".js";
+            scriptElem.src = scriptPath;
+            root.document.head.appendChild(scriptElem);
+          }
           queue[name] = defines;
-          return void 0;
+          skipFunc = true;
         }
+      }
+      if (skipFunc) {
+        return void 0;
       }
       cache[name] = define.apply(context, cacheDeps);
       queueList = Object.keys(queue);
-      for (_j = 0, _len1 = queueList.length; _j < _len1; _j++) {
-        q = queueList[_j];
+      for (_k = 0, _len2 = queueList.length; _k < _len2; _k++) {
+        q = queueList[_k];
         maxDeps = queue[q].require.length;
         curDeps = 0;
         _ref1 = queue[q].require;
-        for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
-          d = _ref1[_k];
+        for (_l = 0, _len3 = _ref1.length; _l < _len3; _l++) {
+          d = _ref1[_l];
           if (cache[d]) {
             curDeps++;
           }
@@ -66,9 +88,8 @@
       }
       return null;
     };
-    moloConfig = {};
     root.molo = moloFunc;
-    root.molo.config = moloConfig;
+    root.molo.paths = {};
     root.molo.clear = function() {
       cache = {};
       return queue = {};
