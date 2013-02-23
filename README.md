@@ -12,5 +12,4 @@ TODO
 ----
 
 * Script loading
-* Script queuing
 * Unit tests
