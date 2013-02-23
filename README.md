@@ -11,5 +11,5 @@ What does it stand for?
 TODO
 ----
 
-* Script loading
 * Unit tests
+* (Better) CommonJS compability
