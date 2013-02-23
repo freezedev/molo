@@ -1,8 +1,16 @@
-molo
+MOLO
 ====
 
 Asynchronous Module Pattern for the browser and CommonJS environments
 
 What does it stand for?
-* Module Only Load Once (MOLO), as a funny reference to YOLO (You Only Live Once)
-* MOdule LOader (That's the boring acronym)
+
+* **M**odule **O**nly **L**oad **O**nce (MOLO), as a funny reference to YOLO (You Only Live Once)
+* **MO**dule **LO**ader (That's the boring acronym)
+
+TODO
+----
+
+* Script loading
+* Script queuing
+* Unit tests
