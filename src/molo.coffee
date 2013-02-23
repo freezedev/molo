@@ -1,16 +1,38 @@
-# ES 5 compability function
+# ES 5 compability functions
 Object.keys or= (o) -> name for own name of o
+Array.isArray or= (a) -> a.push is Array.prototype.push and a.length?
 
 # CommonJS flag
 isCommonJS = exports?
 
+# Function to check for JavaScript file ending
+hasExtension = (filename, extension) -> 
+  return undefined unless filename?
+  
+  filename.lastIndexOf(extension) is filename.length - extension
+
+isJavaScriptFile = (filename) -> hasExtension filename, '.js'
+
+# Wrapper function
 do (root = exports ? this) ->
   cache = {}
   queue = {}
+  pathSep = '/'
 
   moloFunc = (name, defines) ->
+    # Skip flag to skip the rest of the function
+    skipFunc = false
+
     # If name is not a string, it's an anonymous module (Put defines parameter in the correct order)
-    if typeof name isnt 'string' then [name, defines] = [undefined, name]
+    if typeof name isnt 'string'
+      # If name is an array, just load dependencies
+      if Array.isArray(name) 
+        defines =
+          require: name
+
+        skipFunc = true
+      else 
+        [name, defines] = [undefined, name]
 
     # Get properties from defines if it's an object, else they are no dependencies and take the function as the factory
     if typeof defines is 'function' then define = defines else {define, require: deps, context} = defines
@@ -25,31 +47,36 @@ do (root = exports ? this) ->
     # Get the result of cached dependencies
     cacheDeps = []
 
-    # Skip flag to skip the rest of the function
-    skipFunc = false
-
     for i in deps
       if cache[i]
         cacheDeps.push cache[i]
       else
         unless isCommonJS
+          # Create script element
           scriptElem = root.document.createElement 'script'
           scriptElem.async = true
 
-          prePath = ''
-          pathArray = Object.keys(root.molo.paths)
+          if isJavaScriptFile(root.molo.paths[name])
+            # If the path is complete (e.g. 'js/lib/mymodule.js') take that as a path
+            scriptPath = root.molo.paths[name]
+          else
+            # Prepend the base path if any
+            prePath = if root.molo.basePath then "#{basePath}" else ''
+            pathArray = Object.keys(root.molo.paths)
 
-          for p in pathArray
-            # TODO: Problem: 'abc'.indexOf('a') === 'abc'.indexOf('ab')
-            if root.molo.paths[p] and name.indexOf(root.molo.paths[p]) is 0
-              prePath = root.molo.paths[p]
+            # Walk through all paths and check if the module name starts with the path name
+            for p in pathArray
+              if root.molo.paths[p] and name.indexOf("#{root.molo.paths[p]}#{pathSep}") is 0
+                prePath = root.molo.paths[p]
 
-          scriptPath = if prePath then "#{prePath}/#{i}.js" else "#{i}.js"
+            scriptPath = if prePath then "#{prePath}#{pathSep}#{i}.js" else "#{i}.js"
 
           scriptElem.src = scriptPath
 
+          # Append script element to the head of the page
           root.document.head.appendChild scriptElem
 
+        # Add script definition to queue
         queue[name] = defines
 
         # Set skip flag
@@ -82,12 +109,21 @@ do (root = exports ? this) ->
 
     null
 
+  # Map molo function
   root.molo = moloFunc
+
+  # Set path configuration
+  root.molo.basePath = ''
   root.molo.paths = {}
+
+  # Completely clear all caches
   root.molo.clear = ->
     cache = {}
     queue = {}
 
+  # Delete a single module from cache, which forces it to
+  # reload this module if it comes up as a dependency the
+  # next time
   root.molo.delete = (name) ->
     delete cache[name] if cache[name]
     delete queue[name] if queue[name]
@@ -101,5 +137,6 @@ do (root = exports ? this) ->
       require: deps, 
       define: defines
 
+  # Some general definitions
   root.define.amd =
     jQuery: true
