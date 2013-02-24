@@ -2,6 +2,8 @@ flour = require 'flour'
 fs = require 'fs'
 path = require 'path'
 require 'es6-shim'
+zlib = require 'zlib'
+gzip = zlib.createGzip()
 
 SOURCE = 'src'
 OUTPUT = 'js'
@@ -12,7 +14,10 @@ task 'build:debug', ->
 
 task 'build:production', ->
   compile "#{SOURCE}/molo.coffee", "#{OUTPUT}/molo.js", ->
-    minify "#{OUTPUT}/molo.js", "#{OUTPUT}/molo.min.js"
+    minify "#{OUTPUT}/molo.js", "#{OUTPUT}/molo.min.js", ->
+      fs.readFile "#{OUTPUT}/molo.min.js", (err, data) ->
+        buffer = zlib.deflate data, (e, buf) ->
+          fs.writeFile "#{OUTPUT}/molo.min.js.gz", buf
 
 task 'build:examples', ->
   exampleFolderArray = fs.readdirSync("#{EXAMPLES}")
