@@ -7,7 +7,7 @@
     Remove this if you use the .htaccess -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 
-    <title>MOLO Example: Simple</title>
+    <title>MOLO Example: File/script loading</title>
     <meta name="description" content="" />
     <meta name="author" content="Johannes Stein" />
 
@@ -21,7 +21,9 @@
   </head>
 
   <body>
-    <script type="text/javascript" src="../../js/molo.js"></script>
-    <script type="text/javascript" src="main.js"></script>
+    <script type="text/javascript" src="../../js/molo.min.js"></script>
+    <script>
+      molo.main(['main']);
+    </script>
   </body>
 </html>
