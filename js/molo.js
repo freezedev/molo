@@ -1,4 +1,6 @@
 (function() {
+  'use strict';
+
   var hasExtension, isCommonJS, isJavaScriptFile,
     __hasProp = {}.hasOwnProperty;
 
@@ -30,12 +32,39 @@
   };
 
   (function(root) {
-    var cache, moloFunc, pathSep, queue;
+    var cache, loadScriptFile, moloFunc, pathSep, queue;
     cache = {};
     queue = {};
     pathSep = '/';
+    loadScriptFile = function(filename, callback) {
+      var firstScriptElem, locHref, prePath, scriptElem;
+      if (!isCommonJS) {
+        scriptElem = root.document.createElement('script');
+        scriptElem.async = true;
+        scriptElem.type = 'text/javascript';
+        if (filename.indexOf('http://') === 0 || filename.indexOf('https://') === 0 || filename.indexOf('//') === 0) {
+          scriptElem.src = filename;
+        } else {
+          locHref = root.location.href;
+          prePath = locHref.slice(0, locHref.lastIndexOf('/') + 1);
+          scriptElem.src = prePath + filename;
+        }
+        if (callback) {
+          scriptElem.onload = scriptElem.onreadystatechange = function() {
+            var rs;
+            rs = this.readyState;
+            if (rs && rs !== 'complete' && rs !== 'loaded') {
+              return void 0;
+            }
+            return callback();
+          };
+        }
+        firstScriptElem = root.document.getElementsByTagName('script')[0];
+        return firstScriptElem.parentNode.insertBefore(scriptElem, firstScriptElem);
+      }
+    };
     moloFunc = function(name, defines) {
-      var cacheDeps, context, curDeps, d, define, deps, i, maxDeps, modDefinition, modName, p, pathArray, prePath, q, queueList, scriptElem, scriptPath, skipFunc, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
+      var cacheDeps, context, curDeps, d, define, deps, i, maxDeps, modDefinition, modName, p, pathArray, prePath, q, queueList, scriptPath, skipFunc, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
       skipFunc = false;
       if (typeof name !== 'string') {
         if (Array.isArray(name)) {
@@ -64,12 +93,10 @@
       cacheDeps = [];
       for (_i = 0, _len = deps.length; _i < _len; _i++) {
         i = deps[_i];
-        if (cache[i]) {
+        if (cache.hasOwnProperty(i)) {
           cacheDeps.push(cache[i]);
         } else {
-          if (!isCommonJS) {
-            scriptElem = root.document.createElement('script');
-            scriptElem.async = true;
+          if (root.molo.scriptLoader) {
             if (isJavaScriptFile(root.molo.paths[name])) {
               scriptPath = root.molo.paths[name];
             } else {
@@ -83,8 +110,7 @@
               }
               scriptPath = prePath ? "" + prePath + pathSep + i + ".js" : "" + i + ".js";
             }
-            scriptElem.src = scriptPath;
-            root.document.head.appendChild(scriptElem);
+            loadScriptFile(scriptPath);
           }
           queue[name] = defines;
           skipFunc = true;
@@ -93,7 +119,11 @@
       if (skipFunc) {
         return void 0;
       }
-      cache[name] = define.apply(context, cacheDeps);
+      if (typeof define === 'object' && deps.length === 0) {
+        cache[name] = define;
+      } else {
+        cache[name] = define.apply(context, cacheDeps);
+      }
       queueList = Object.keys(queue);
       for (_k = 0, _len2 = queueList.length; _k < _len2; _k++) {
         q = queueList[_k];
@@ -116,6 +146,7 @@
       return null;
     };
     root.molo = moloFunc;
+    root.molo.scriptLoader = true;
     root.molo.basePath = '';
     root.molo.paths = {};
     root.molo.clear = function() {
@@ -130,16 +161,38 @@
         return delete queue[name];
       }
     };
+    root.molo.main = function(dependencies) {
+      if (typeof dependencies === 'string') {
+        dependencies = [dependencies];
+      }
+      if (Array.isArray(dependencies)) {
+        return moloFunc(dependencies);
+      }
+    };
     root.module || (root.module = moloFunc);
     root.define = function(name, deps, defines) {
+      if (!Array.isArray(deps)) {
+        defines = deps;
+        deps = [];
+      }
       return moloFunc(name, {
         require: deps,
         define: defines
       });
     };
-    return root.define.amd = {
+    root.define.amd = {
       jQuery: true
     };
+    moloFunc('require', {
+      define: function() {
+        return function(moduleID) {
+          return cache[moduleID];
+        };
+      }
+    });
+    return moloFunc('exports', {
+      define: function() {}
+    });
   })(typeof exports !== "undefined" && exports !== null ? exports : this);
 
 }).call(this);
