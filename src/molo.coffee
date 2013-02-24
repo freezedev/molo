@@ -1,3 +1,5 @@
+'use strict';
+
 # ES 5 compability functions
 Object.keys or= (o) -> name for own name of o
 Array.isArray or= (a) -> a.push is Array.prototype.push and a.length?
@@ -18,6 +20,31 @@ do (root = exports ? this) ->
   cache = {}
   queue = {}
   pathSep = '/'
+  
+  loadScriptFile = (filename, callback) ->
+    unless isCommonJS
+      scriptElem = root.document.createElement 'script'
+      
+      scriptElem.async = true
+      scriptElem.type = 'text/javascript'
+      
+      # Check if it's a complete url, else prepend protocol/path
+      if filename.indexOf('http://') is 0 or filename.indexOf('https://') is 0 or filename.indexOf('//') is 0
+        scriptElem.src = filename
+      else
+        locHref = root.location.href
+      
+        prePath = locHref.slice 0, locHref.lastIndexOf('/') + 1
+        scriptElem.src = prePath + filename
+        
+      if callback
+        scriptElem.onload = scriptElem.onreadystatechange = ->
+          rs = @readyState;
+          return undefined if rs and rs isnt 'complete' and rs isnt 'loaded'
+          callback()
+        
+      firstScriptElem = root.document.getElementsByTagName('script')[0]
+      firstScriptElem.parentNode.insertBefore scriptElem, firstScriptElem
 
   moloFunc = (name, defines) ->
     # Skip flag to skip the rest of the function
@@ -48,14 +75,14 @@ do (root = exports ? this) ->
     cacheDeps = []
 
     for i in deps
-      if cache[i]
+      # Need to check for hasOwnProperty
+      # Checking for cache[i] is not strict enough
+      # because a module could have undefined, null, 0 or an empty string
+      # as its export value
+      if cache.hasOwnProperty(i)
         cacheDeps.push cache[i]
       else
-        unless isCommonJS
-          # Create script element
-          scriptElem = root.document.createElement 'script'
-          scriptElem.async = true
-
+        if root.molo.scriptLoader
           if isJavaScriptFile(root.molo.paths[name])
             # If the path is complete (e.g. 'js/lib/mymodule.js') take that as a path
             scriptPath = root.molo.paths[name]
@@ -71,10 +98,7 @@ do (root = exports ? this) ->
 
             scriptPath = if prePath then "#{prePath}#{pathSep}#{i}.js" else "#{i}.js"
 
-          scriptElem.src = scriptPath
-
-          # Append script element to the head of the page
-          root.document.head.appendChild scriptElem
+          loadScriptFile scriptPath
 
         # Add script definition to queue
         queue[name] = defines
@@ -88,7 +112,12 @@ do (root = exports ? this) ->
     return undefined if skipFunc
 
     # Execute factory function and store it in cache
-    cache[name] = define.apply context, cacheDeps
+    
+    # Special case: Factory is an object and has no dependencies ()
+    if typeof define is 'object' and deps.length is 0
+      cache[name] = define
+    else
+      cache[name] = define.apply context, cacheDeps
 
     # Check queue
     queueList = Object.keys(queue)
@@ -111,6 +140,9 @@ do (root = exports ? this) ->
 
   # Map molo function
   root.molo = moloFunc
+  
+  # Molo basic configuration
+  root.molo.scriptLoader = true
 
   # Set path configuration
   root.molo.basePath = ''
@@ -127,12 +159,23 @@ do (root = exports ? this) ->
   root.molo.delete = (name) ->
     delete cache[name] if cache[name]
     delete queue[name] if queue[name]
+    
+  # Shorthand function to load script files
+  root.molo.main = (dependencies) ->
+    dependencies = [dependencies] if typeof dependencies is 'string'
+    
+    moloFunc(dependencies) if Array.isArray dependencies
 
   # Overwrite module only if it hasn't been defined
+  # TODO: Reflect if this is necessary or even a good idea (ES 6 problems?)
   root.module or= moloFunc
 
-  # Compability to official definition
+  # Compability to official definition ()
   root.define = (name, deps, defines) -> 
+    unless Array.isArray deps
+      defines = deps
+      deps = []
+  
     moloFunc name, 
       require: deps, 
       define: defines
@@ -140,3 +183,10 @@ do (root = exports ? this) ->
   # Some general definitions
   root.define.amd =
     jQuery: true
+  
+  # Standard module definitions
+  moloFunc 'require',
+    define: -> (moduleID) -> cache[moduleID]
+    
+  moloFunc 'exports',
+    define: ->
