@@ -32,7 +32,7 @@
   };
 
   (function(root) {
-    var cache, loadScriptFile, moloFunc, pathSep, queue;
+    var cache, loadScriptFile, moloFunc, moloStdLib, pathSep, queue;
     cache = {};
     queue = {};
     pathSep = '/';
@@ -96,7 +96,7 @@
         if (cache.hasOwnProperty(i)) {
           cacheDeps.push(cache[i]);
         } else {
-          if (root.molo.scriptLoader) {
+          if (root.molo.scriptLoader || i.indexOf('#!') !== 0) {
             if (isJavaScriptFile(root.molo.paths[name])) {
               scriptPath = root.molo.paths[name];
             } else {
@@ -151,7 +151,8 @@
     root.molo.paths = {};
     root.molo.clear = function() {
       cache = {};
-      return queue = {};
+      queue = {};
+      return moloStdLib.call(this);
     };
     root.molo["delete"] = function(name) {
       if (cache[name]) {
@@ -183,16 +184,19 @@
     root.define.amd = {
       jQuery: true
     };
-    moloFunc('require', {
-      define: function() {
-        return function(moduleID) {
-          return cache[moduleID];
-        };
-      }
-    });
-    return moloFunc('exports', {
-      define: function() {}
-    });
+    moloStdLib = function() {
+      moloFunc('require', {
+        define: function() {
+          return function(moduleID) {
+            return cache[moduleID];
+          };
+        }
+      });
+      return moloFunc('exports', {
+        define: function() {}
+      });
+    };
+    return moloStdLib();
   })(typeof exports !== "undefined" && exports !== null ? exports : this);
 
 }).call(this);
