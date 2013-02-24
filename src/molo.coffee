@@ -82,7 +82,8 @@ do (root = exports ? this) ->
       if cache.hasOwnProperty(i)
         cacheDeps.push cache[i]
       else
-        if root.molo.scriptLoader
+        # If a '#!' is put in front of the dependency, it will assume the module is in the same script file
+        if root.molo.scriptLoader or i.indexOf('#!') isnt 0
           if isJavaScriptFile(root.molo.paths[name])
             # If the path is complete (e.g. 'js/lib/mymodule.js') take that as a path
             scriptPath = root.molo.paths[name]
@@ -152,6 +153,8 @@ do (root = exports ? this) ->
   root.molo.clear = ->
     cache = {}
     queue = {}
+    
+    moloStdLib.call @
 
   # Delete a single module from cache, which forces it to
   # reload this module if it comes up as a dependency the
@@ -185,8 +188,11 @@ do (root = exports ? this) ->
     jQuery: true
   
   # Standard module definitions
-  moloFunc 'require',
-    define: -> (moduleID) -> cache[moduleID]
-    
-  moloFunc 'exports',
-    define: ->
+  moloStdLib = ->
+    moloFunc 'require',
+      define: -> (moduleID) -> cache[moduleID]
+      
+    moloFunc 'exports',
+      define: ->
+        
+  moloStdLib() 
