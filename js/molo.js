@@ -64,7 +64,7 @@
       }
     };
     moloFunc = function(name, defines) {
-      var cacheDeps, context, curDeps, d, define, deps, i, maxDeps, modDefinition, modName, p, pathArray, prePath, q, queueList, scriptPath, skipFunc, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
+      var cacheDeps, context, curDeps, d, define, depBasename, deps, i, maxDeps, modDefinition, modName, p, pathArray, pluginName, prePath, q, queueList, scriptLoader, scriptPath, skipFunc, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
       skipFunc = false;
       if (typeof name !== 'string') {
         if (Array.isArray(name)) {
@@ -96,7 +96,12 @@
         if (cache.hasOwnProperty(i)) {
           cacheDeps.push(cache[i]);
         } else {
-          if (root.molo.scriptLoader || i.indexOf('#!') !== 0) {
+          pluginName = i.split('!')[1];
+          scriptLoader = root.molo.scriptLoader;
+          if (pluginName === '') {
+            scriptLoader = false;
+          }
+          if (scriptLoader) {
             if (isJavaScriptFile(root.molo.paths[name])) {
               scriptPath = root.molo.paths[name];
             } else {
@@ -132,7 +137,8 @@
         _ref1 = queue[q].require;
         for (_l = 0, _len3 = _ref1.length; _l < _len3; _l++) {
           d = _ref1[_l];
-          if (cache[d]) {
+          depBasename = d.split('!')[0];
+          if (cache[depBasename]) {
             curDeps++;
           }
         }
@@ -162,6 +168,7 @@
         return delete queue[name];
       }
     };
+    root.molo.plugins = {};
     root.molo.main = function(dependencies) {
       if (typeof dependencies === 'string') {
         dependencies = [dependencies];
