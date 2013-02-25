@@ -82,8 +82,16 @@ do (root = exports ? this) ->
       if cache.hasOwnProperty(i)
         cacheDeps.push cache[i]
       else
-        # If a '#!' is put in front of the dependency, it will assume the module is in the same script file
-        if root.molo.scriptLoader or i.indexOf('#!') isnt 0
+        # Plugin functionality
+        pluginName = i.split('!')[1]
+        
+        scriptLoader = root.molo.scriptLoader
+        
+        # If a script is defined as 'my/script!' it will try to resolve the 
+        # dependency on the same page
+        scriptLoader = false if pluginName is ''
+        
+        if scriptLoader
           if isJavaScriptFile(root.molo.paths[name])
             # If the path is complete (e.g. 'js/lib/mymodule.js') take that as a path
             scriptPath = root.molo.paths[name]
@@ -128,8 +136,10 @@ do (root = exports ? this) ->
       maxDeps = queue[q].require.length
       curDeps = 0
 
-      (curDeps++ if cache[d]) for d in queue[q].require
-
+      for d in queue[q].require
+        depBasename = d.split('!')[0]
+        curDeps++ if cache[depBasename]
+      
       # Reload module and delete item from queue
       if curDeps is maxDeps
         modName = q
@@ -162,6 +172,9 @@ do (root = exports ? this) ->
   root.molo.delete = (name) ->
     delete cache[name] if cache[name]
     delete queue[name] if queue[name]
+    
+  # Provide plugin functionality
+  root.molo.plugins = {}
     
   # Shorthand function to load script files
   root.molo.main = (dependencies) ->
