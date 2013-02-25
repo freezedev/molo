@@ -5,7 +5,10 @@ dependencies yourself
 ###
 
 module 'test'
-  require: ['testfun', 'teststring']
+  # The exclamation mark is generally the entry point for plugins, 
+  # but without a plugin name after the exclamation mark it just means
+  # that it will try to resolve the dependency in the same file
+  require: ['testfun!', 'teststring!']
   define: (testfun, teststring) -> testfun teststring
 
 module 'teststring', -> 'test'
