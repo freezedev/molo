@@ -47,6 +47,10 @@ do (root = exports ? this) ->
       firstScriptElem.parentNode.insertBefore scriptElem, firstScriptElem
 
   moloFunc = (name, defines) ->
+    # TODO: Add module name always to queue and remove it if all dependencies have been met
+    # Currently, the module will only be added if it has any depedencies and cannot be
+    # resolved directly
+    
     # Skip flag to skip the rest of the function
     skipFunc = false
 
@@ -177,16 +181,16 @@ do (root = exports ? this) ->
   root.molo.plugins = {}
     
   # Shorthand function to load script files
-  root.molo.main = (dependencies) ->
+  root.molo.main = root.require = (dependencies, callback) ->
     dependencies = [dependencies] if typeof dependencies is 'string'
     
-    moloFunc(dependencies) if Array.isArray dependencies
+    moloFunc(dependencies, callback) if Array.isArray dependencies
 
   # Overwrite module only if it hasn't been defined
   # TODO: Reflect if this is necessary or even a good idea (ES 6 problems?)
   root.module or= moloFunc
 
-  # Compability to official definition ()
+  # Compability to official definition (https://github.com/amdjs/amdjs-api/wiki/AMD)
   root.define = (name, deps, defines) -> 
     unless Array.isArray deps
       defines = deps
