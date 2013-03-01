@@ -1,6 +1,5 @@
 (function() {
   'use strict';
-
   var hasExtension, isCommonJS, isJavaScriptFile,
     __hasProp = {}.hasOwnProperty;
 
@@ -75,6 +74,9 @@
         } else {
           _ref = [void 0, name], name = _ref[0], defines = _ref[1];
         }
+      }
+      if (!defines) {
+        return void 0;
       }
       if (typeof defines === 'function') {
         define = defines;
@@ -169,12 +171,12 @@
       }
     };
     root.molo.plugins = {};
-    root.molo.main = function(dependencies) {
+    root.molo.main = root.require = function(dependencies, callback) {
       if (typeof dependencies === 'string') {
         dependencies = [dependencies];
       }
       if (Array.isArray(dependencies)) {
-        return moloFunc(dependencies);
+        return moloFunc(dependencies, callback);
       }
     };
     root.module || (root.module = moloFunc);
