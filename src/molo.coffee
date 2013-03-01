@@ -65,6 +65,9 @@ do (root = exports ? this) ->
       else 
         [name, defines] = [undefined, name]
 
+    # Skip if no factory has been defined
+    return undefined unless defines
+
     # Get properties from defines if it's an object, else they are no dependencies and take the function as the factory
     if typeof defines is 'function' then define = defines else {define, require: deps, context} = defines
 
@@ -125,7 +128,7 @@ do (root = exports ? this) ->
     return undefined if skipFunc
 
     # Execute factory function and store it in cache
-    
+
     # Special case: Factory is an object and has no dependencies ()
     if typeof define is 'object' and deps.length is 0
       cache[name] = define
