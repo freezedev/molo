@@ -8,7 +8,7 @@ dependencies yourself
 
 (function() {
 
-  module('test')({
+  module('test', {
     require: ['testfun!', 'teststring!'],
     define: function(testfun, teststring) {
       return testfun(teststring);
