@@ -44,3 +44,7 @@ npm-debug.log
 ###########
 *.sublime-project
 *.sublime-workspace
+
+# Exceptions #
+##############
+!molo.min.js.gz
