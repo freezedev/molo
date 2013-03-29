@@ -1,6 +1,6 @@
 (function() {
   'use strict';
-  var hasExtension, isCommonJS, isJavaScriptFile,
+  var hasExtension, isCommonJS, isJavaScriptFile, _ref,
     __hasProp = {}.hasOwnProperty;
 
   Object.keys || (Object.keys = function(o) {
@@ -63,7 +63,7 @@
       }
     };
     moloFunc = function(name, defines) {
-      var cacheDeps, context, curDeps, d, define, depBasename, deps, i, maxDeps, modDefinition, modName, p, pathArray, pluginName, prePath, q, queueList, scriptLoader, scriptPath, skipFunc, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1;
+      var cacheDeps, context, curDeps, d, define, depBasename, deps, i, maxDeps, modDefinition, modName, p, pathArray, pluginName, prePath, q, queueList, scriptLoader, scriptPath, skipFunc, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref1, _ref2;
       skipFunc = false;
       if (typeof name !== 'string') {
         if (Array.isArray(name)) {
@@ -72,7 +72,7 @@
           };
           skipFunc = true;
         } else {
-          _ref = [void 0, name], name = _ref[0], defines = _ref[1];
+          _ref1 = [void 0, name], name = _ref1[0], defines = _ref1[1];
         }
       }
       if (!defines) {
@@ -95,7 +95,7 @@
       cacheDeps = [];
       for (_i = 0, _len = deps.length; _i < _len; _i++) {
         i = deps[_i];
-        if (cache.hasOwnProperty(i)) {
+        if (Object.hasOwnProperty.call(cache, i)) {
           cacheDeps.push(cache[i]);
         } else {
           pluginName = i.split('!')[1];
@@ -136,9 +136,9 @@
         q = queueList[_k];
         maxDeps = queue[q].require.length;
         curDeps = 0;
-        _ref1 = queue[q].require;
-        for (_l = 0, _len3 = _ref1.length; _l < _len3; _l++) {
-          d = _ref1[_l];
+        _ref2 = queue[q].require;
+        for (_l = 0, _len3 = _ref2.length; _l < _len3; _l++) {
+          d = _ref2[_l];
           depBasename = d.split('!')[0];
           if (cache[depBasename]) {
             curDeps++;
@@ -206,6 +206,6 @@
       });
     };
     return moloStdLib();
-  })(typeof exports !== "undefined" && exports !== null ? exports : this);
+  })((_ref = typeof module !== "undefined" && module !== null ? module.exports : void 0) != null ? _ref : this);
 
 }).call(this);
