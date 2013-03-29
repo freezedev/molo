@@ -5,32 +5,30 @@ require 'es6-shim'
 zlib = require 'zlib'
 gzip = zlib.createGzip()
 
-SOURCE = 'src'
-OUTPUT = 'js'
-EXAMPLES = 'examples'
+{source, target, mainFile, examples} = require './cakeconfig'
 
 task 'build:debug', -> 
-  compile "#{SOURCE}/molo.coffee", "#{OUTPUT}/molo.js"
+  compile "#{source}/#{mainFile}.coffee", "#{target}/#{mainFile}.js"
 
 task 'build:production', ->
-  compile "#{SOURCE}/molo.coffee", "#{OUTPUT}/molo.js", ->
-    minify "#{OUTPUT}/molo.js", "#{OUTPUT}/molo.min.js", ->
-      fs.readFile "#{OUTPUT}/molo.min.js", (err, data) ->
+  compile "#{source}/#{mainFile}.coffee", "#{target}/#{mainFile}.js", ->
+    minify "#{target}/#{mainFile}.js", "#{target}/#{mainFile}.min.js", ->
+      fs.readFile "#{target}/#{mainFile}.min.js", (err, data) ->
         buffer = zlib.deflate data, (e, buf) ->
-          fs.writeFile "#{OUTPUT}/molo.min.js.gz", buf
+          fs.writeFile "#{target}/#{mainFile}.min.js.gz", buf
 
 task 'build:examples', ->
-  exampleFolderArray = fs.readdirSync("#{EXAMPLES}")
+  exampleFolderArray = fs.readdirSync("#{examples}")
 
   for i in exampleFolderArray
     fileArray = []
-    exampleFolderContent = fs.readdirSync(path.join(EXAMPLES, i))
+    exampleFolderContent = fs.readdirSync(path.join(examples, i))
 
     fileArray = do -> 
       for j in exampleFolderContent
         if j.endsWith('.coffee') then fileArray.push j else continue
 
-    if fileArray.length > 0 then compile "#{EXAMPLES}/#{i}/*.coffee", "#{EXAMPLES}/#{i}/*"   
+    if fileArray.length > 0 then compile "#{examples}/#{i}/*.coffee", "#{examples}/#{i}/*"   
 
 task 'build', ->
   invoke 'build:debug'
