@@ -16,7 +16,7 @@ hasExtension = (filename, extension) ->
 isJavaScriptFile = (filename) -> hasExtension filename, '.js'
 
 # Wrapper function
-do (root = exports ? this) ->
+do (root = module?.exports ? this) ->
   cache = {}
   queue = {}
   pathSep = '/'
@@ -86,7 +86,7 @@ do (root = exports ? this) ->
       # Checking for cache[i] is not strict enough
       # because a module could have undefined, null, 0 or an empty string
       # as its export value
-      if cache.hasOwnProperty(i)
+      if Object.hasOwnProperty.call cache, i
         cacheDeps.push cache[i]
       else
         # Plugin functionality
