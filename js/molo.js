@@ -67,9 +67,13 @@
       skipFunc = false;
       if (typeof name !== 'string') {
         if (Array.isArray(name)) {
-          defines = {
-            require: name
-          };
+          if (Object.keys(defines).length > 0) {
+            defines.require = name;
+          } else {
+            defines = {
+              require: name
+            };
+          }
           skipFunc = true;
         } else {
           _ref1 = [void 0, name], name = _ref1[0], defines = _ref1[1];
