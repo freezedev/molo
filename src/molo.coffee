@@ -45,6 +45,17 @@ do (root = module?.exports ? this) ->
         
       firstScriptElem = root.document.getElementsByTagName('script')[0]
       firstScriptElem.parentNode.insertBefore scriptElem, firstScriptElem
+      
+  moloDefine = (name, body) ->
+    # If body is a function, add it to the cache directly, else queue it
+    if typeof body is 'function' then return cache[name] = body
+    
+  moloRequire = (name, callback) ->
+    if Object.hasOwnProperty.call cache, name then return callback cache[name]
+    
+    if Object.hasOwnProperty.call queue, name
+      name
+    
 
   moloFunc = (name, defines) ->
     # TODO: Add module name always to queue and remove it if all dependencies have been met
@@ -53,13 +64,18 @@ do (root = module?.exports ? this) ->
     
     # Skip flag to skip the rest of the function
     skipFunc = false
+    
+    defObject = {}
 
     # If name is not a string, it's an anonymous module (Put defines parameter in the correct order)
     if typeof name isnt 'string'
       # If name is an array, just load dependencies
       if Array.isArray(name) 
-        defines =
-          require: name
+        if Object.keys(defines).length > 0
+          defines.require = name
+        else
+          defines =
+            require: name
 
         skipFunc = true
       else 
@@ -194,7 +210,7 @@ do (root = module?.exports ? this) ->
   root.module or= moloFunc
 
   # Compability to official definition (https://github.com/amdjs/amdjs-api/wiki/AMD)
-  root.define = (name, deps, defines) -> 
+  root.define = (name, deps, defines) ->   
     unless Array.isArray deps
       defines = deps
       deps = []
