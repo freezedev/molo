@@ -31,7 +31,7 @@
   };
 
   (function(root) {
-    var cache, loadScriptFile, moloFunc, moloStdLib, pathSep, queue;
+    var cache, loadScriptFile, moloDefine, moloFunc, moloRequire, moloStdLib, pathSep, queue;
     cache = {};
     queue = {};
     pathSep = '/';
@@ -62,9 +62,33 @@
         return firstScriptElem.parentNode.insertBefore(scriptElem, firstScriptElem);
       }
     };
+    moloDefine = function(name, body) {
+      if (!(name || body)) {
+        return;
+      }
+      if (typeof name === 'function') {
+        return name.apply(this);
+      }
+      if (typeof body === 'object') {
+        return cache[name] = body;
+      }
+      if (typeof body === 'function') {
+        return cache[name] = body();
+      }
+      return queue[name] = define;
+    };
+    moloRequire = function(name, callback) {
+      if (Object.hasOwnProperty.call(cache, name)) {
+        return callback(cache[name]);
+      }
+      if (Object.hasOwnProperty.call(queue, name)) {
+        return name;
+      }
+    };
     moloFunc = function(name, defines) {
-      var cacheDeps, context, curDeps, d, define, depBasename, deps, i, maxDeps, modDefinition, modName, p, pathArray, pluginName, prePath, q, queueList, scriptLoader, scriptPath, skipFunc, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref1, _ref2;
+      var cacheDeps, context, curDeps, d, defObject, define, depBasename, deps, i, maxDeps, modDefinition, modName, p, pathArray, pluginName, prePath, q, queueList, scriptLoader, scriptPath, skipFunc, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref1, _ref2;
       skipFunc = false;
+      defObject = {};
       if (typeof name !== 'string') {
         if (Array.isArray(name)) {
           if (Object.keys(defines).length > 0) {
