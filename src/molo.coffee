@@ -47,6 +47,9 @@ do (root = module?.exports ? this) ->
       firstScriptElem.parentNode.insertBefore scriptElem, firstScriptElem
       
   moloDefine = (name, body) ->
+    # Abort if no name or no body
+    return unless name or body
+    
     # If name is a function, then just call the function
     if typeof name is 'function' then return name.apply @
     
