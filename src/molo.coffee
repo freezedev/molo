@@ -47,6 +47,9 @@ do (root = module?.exports ? this) ->
       firstScriptElem.parentNode.insertBefore scriptElem, firstScriptElem
       
   moloDefine = (name, body) ->
+    # If name is a function, then just call the function
+    if typeof name is 'function' then return name.apply @
+    
     # If body is a function, add it to the cache directly, else queue it
     if typeof body is 'function' then return cache[name] = body
     
