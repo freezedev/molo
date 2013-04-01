@@ -53,8 +53,14 @@ do (root = module?.exports ? this) ->
     # If name is a function, then just call the function
     if typeof name is 'function' then return name.apply @
     
-    # If body is a function, add it to the cache directly, else queue it
-    if typeof body is 'function' then return cache[name] = body
+    # If body, add it to the cache directly, else queue it
+    # Special case: body is allowed to be an object (add it to cache)
+    if typeof body is 'object' then return cache[name] = body
+    
+    # If function, call the function and add it to the cache
+    if typeof body is 'function' then return cache[name] = body()
+    
+    queue[name] = define
     
   moloRequire = (name, callback) ->
     if Object.hasOwnProperty.call cache, name then return callback cache[name]
