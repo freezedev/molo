@@ -8,6 +8,8 @@ What does it stand for?
 * **M**odule **O**nly **L**oad **O**nce (MOLO), as a funny reference to YOLO (You Only Live Once)
 * **MO**dule **LO**ader (That's the boring acronym)
 
+It aims to be compatible with the official AMD specification (https://github.com/amdjs/amdjs-api/wiki/AMD).
+
 Features
 --------
 
