@@ -1,6 +1,17 @@
 (function() {
   'use strict';
-  var hasExtension, hasModule, isJavaScriptFile, _ref;
+  var hasExtension, hasModule, isJavaScriptFile, pathSep, _ref,
+    __hasProp = {}.hasOwnProperty;
+
+  Object.keys || (Object.keys = function(o) {
+    var name, _results;
+    _results = [];
+    for (name in o) {
+      if (!__hasProp.call(o, name)) continue;
+      _results.push(name);
+    }
+    return _results;
+  });
 
   Array.isArray || (Array.isArray = function(a) {
     return a.push === Array.prototype.push && (a.length != null);
@@ -19,8 +30,10 @@
     return hasExtension(filename, '.js');
   };
 
+  pathSep = '/';
+
   (function(root) {
-    var cache, loadScriptFile, mainHasBeenCalled, queue;
+    var appendScriptPath, cache, loadScriptFile, mainHasBeenCalled, queue;
     loadScriptFile = function(filename, callback) {
       var firstScriptElem, locHref, prePath, scriptElem;
       if (!hasModule) {
@@ -51,6 +64,22 @@
           require(filename);
           return callback();
         }
+      }
+    };
+    appendScriptPath = function(name) {
+      var p, pathArray, prePath, scriptPath, _i, _len;
+      if (isJavaScriptFile(root.molo.paths[name])) {
+        return scriptPath = root.molo.paths[name];
+      } else {
+        prePath = root.molo.basePath ? "" + basePath : '';
+        pathArray = Object.keys(root.molo.paths);
+        for (_i = 0, _len = pathArray.length; _i < _len; _i++) {
+          p = pathArray[_i];
+          if (root.molo.paths[p] && name.indexOf("" + root.molo.paths[p] + pathSep) === 0) {
+            prePath = root.molo.paths[p];
+          }
+        }
+        return scriptPath = prePath ? "" + prePath + pathSep + name + ".js" : "" + name + ".js";
       }
     };
     cache = {};
@@ -103,7 +132,7 @@
       for (_i = 0, _len = name.length; _i < _len; _i++) {
         i = name[_i];
         _results.push((function(i) {
-          var cacheDeps, dep, depIndex, depLength, depsLoaded, p, pathArray, prePath, scriptPath, updateDeps, _j, _k, _len1, _len2, _ref1, _results1;
+          var cacheDeps, dep, depIndex, depLength, depsLoaded, updateDeps, _j, _len1, _ref1, _results1;
           cacheDeps = [];
           if (queue[i]) {
             depIndex = 0;
@@ -126,25 +155,20 @@
                 depIndex++;
                 _results1.push(depsLoaded());
               } else {
-                _results1.push(root.molo.require(i, updateDeps, context));
+                if (queue[dep]) {
+                  _results1.push(root.molo.require(i, updateDeps, context));
+                } else {
+                  _results1.push(loadScriptFile(appendScriptPath(dep), function() {
+                    return root.molo.require(i, callback, context);
+                  }));
+                }
               }
             }
             return _results1;
           } else {
-            if (isJavaScriptFile(root.molo.paths[name])) {
-              scriptPath = root.molo.paths[name];
-            } else {
-              prePath = root.molo.basePath ? "" + basePath : '';
-              pathArray = Object.keys(root.molo.paths);
-              for (_k = 0, _len2 = pathArray.length; _k < _len2; _k++) {
-                p = pathArray[_k];
-                if (root.molo.paths[p] && name.indexOf("" + root.molo.paths[p] + pathSep) === 0) {
-                  prePath = root.molo.paths[p];
-                }
-              }
-              scriptPath = prePath ? "" + prePath + pathSep + i + ".js" : "" + i + ".js";
-            }
-            return loadScriptFile(scriptPath, function() {});
+            return loadScriptFile(appendScriptPath(i), function() {
+              return root.molo.require(i, callback, context);
+            });
           }
         })(i));
       }
