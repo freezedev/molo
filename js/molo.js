@@ -1,23 +1,12 @@
 (function() {
   'use strict';
-  var hasExtension, isCommonJS, isJavaScriptFile, _ref,
-    __hasProp = {}.hasOwnProperty;
-
-  Object.keys || (Object.keys = function(o) {
-    var name, _results;
-    _results = [];
-    for (name in o) {
-      if (!__hasProp.call(o, name)) continue;
-      _results.push(name);
-    }
-    return _results;
-  });
+  var hasExtension, hasModule, isJavaScriptFile, _ref;
 
   Array.isArray || (Array.isArray = function(a) {
     return a.push === Array.prototype.push && (a.length != null);
   });
 
-  isCommonJS = typeof exports !== "undefined" && exports !== null;
+  hasModule = (typeof module !== "undefined" && module !== null ? module.exports : void 0) != null;
 
   hasExtension = function(filename, extension) {
     if (filename == null) {
@@ -31,13 +20,10 @@
   };
 
   (function(root) {
-    var cache, loadScriptFile, moloDefine, moloFunc, moloRequire, moloStdLib, pathSep, queue;
-    cache = {};
-    queue = {};
-    pathSep = '/';
+    var cache, loadScriptFile, mainHasBeenCalled, queue;
     loadScriptFile = function(filename, callback) {
       var firstScriptElem, locHref, prePath, scriptElem;
-      if (!isCommonJS) {
+      if (!hasModule) {
         scriptElem = root.document.createElement('script');
         scriptElem.async = true;
         scriptElem.type = 'text/javascript';
@@ -60,135 +46,109 @@
         }
         firstScriptElem = root.document.getElementsByTagName('script')[0];
         return firstScriptElem.parentNode.insertBefore(scriptElem, firstScriptElem);
-      }
-    };
-    moloDefine = function(name, body) {
-      if (!(name || body)) {
-        return;
-      }
-      if (typeof name === 'function') {
-        return name.apply(this);
-      }
-      if (typeof body === 'object') {
-        return cache[name] = body;
-      }
-      if (typeof body === 'function') {
-        return cache[name] = body();
-      }
-      return queue[name] = define;
-    };
-    moloRequire = function(name, callback) {
-      if (Object.hasOwnProperty.call(cache, name)) {
-        return callback(cache[name]);
-      }
-      if (Object.hasOwnProperty.call(queue, name)) {
-        return name;
-      }
-    };
-    moloFunc = function(name, defines) {
-      var cacheDeps, context, curDeps, d, defObject, define, depBasename, deps, i, maxDeps, modDefinition, modName, p, pathArray, pluginName, prePath, q, queueList, scriptLoader, scriptPath, skipFunc, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref1, _ref2;
-      skipFunc = false;
-      defObject = {};
-      if (typeof name !== 'string') {
-        if (Array.isArray(name)) {
-          if (Object.keys(defines).length > 0) {
-            defines.require = name;
-          } else {
-            defines = {
-              require: name
-            };
-          }
-          skipFunc = true;
-        } else {
-          _ref1 = [void 0, name], name = _ref1[0], defines = _ref1[1];
+      } else {
+        if (require) {
+          require(filename);
+          return callback();
         }
       }
-      if (!defines) {
-        return void 0;
+    };
+    cache = {};
+    queue = {};
+    root.molo = {};
+    root.molo.basePath = '';
+    root.molo.paths = {};
+    root.molo.defaultContext = root;
+    root.molo.define = root.define = function(name, dependencies, factory) {
+      var _ref1;
+      if (cache[name]) {
+        throw new TypeError("A module called " + name + " has already been evaluated. Please choose a different name.");
       }
-      if (typeof defines === 'function') {
-        define = defines;
-      } else {
-        define = defines.define, deps = defines.require, context = defines.context;
+      if (cache[name]) {
+        throw new TypeError("A module called " + name + " has already been defined. Please choose a different name.");
       }
-      if (deps == null) {
-        deps = [];
+      if (!Array.isArray(dependencies)) {
+        if (typeof dependencies === 'object' || typeof dependencies === 'function') {
+          _ref1 = [factory, dependencies], dependencies = _ref1[0], factory = _ref1[1];
+        }
       }
-      if (context == null) {
-        context = this;
+      if (!dependencies) {
+        dependencies = [];
       }
-      if (typeof deps === 'string') {
-        deps = [deps];
-      }
-      cacheDeps = [];
-      for (_i = 0, _len = deps.length; _i < _len; _i++) {
-        i = deps[_i];
-        if (Object.hasOwnProperty.call(cache, i)) {
-          cacheDeps.push(cache[i]);
+      if (dependencies.length === 0) {
+        if (typeof factory === 'function') {
+          cache[name] = factory.call(root.molo.defaultContext);
         } else {
-          pluginName = i.split('!')[1];
-          scriptLoader = root.molo.scriptLoader;
-          if (pluginName === '') {
-            scriptLoader = false;
-          }
-          if (scriptLoader) {
+          cache[name] = factory;
+        }
+        return;
+      }
+      return queue[name] = {
+        dependencies: dependencies,
+        factory: factory
+      };
+    };
+    root.molo.require = root.require = function(name, callback, context) {
+      var i, _i, _len, _results;
+      if (context == null) {
+        context = root.molo.defaultContext;
+      }
+      if (typeof name === 'string') {
+        name = [name];
+      }
+      if (!Array.isArray(name)) {
+        return;
+      }
+      _results = [];
+      for (_i = 0, _len = name.length; _i < _len; _i++) {
+        i = name[_i];
+        _results.push((function(i) {
+          var cacheDeps, dep, depIndex, depLength, depsLoaded, p, pathArray, prePath, scriptPath, updateDeps, _j, _k, _len1, _len2, _ref1, _results1;
+          cacheDeps = [];
+          if (queue[i]) {
+            depIndex = 0;
+            depLength = queue[i].dependencies.length;
+            depsLoaded = function() {
+              if (depIndex === depLength) {
+                return cache[i] = queue[i].factory.apply(context, cacheDeps);
+              }
+            };
+            updateDeps = function() {
+              depIndex++;
+              return depsLoaded();
+            };
+            _ref1 = queue[i].dependencies;
+            _results1 = [];
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              dep = _ref1[_j];
+              if (Object.hasOwnProperty.call(cache, dep)) {
+                cacheDeps.push(cache[dep]);
+                depIndex++;
+                _results1.push(depsLoaded());
+              } else {
+                _results1.push(root.molo.require(i, updateDeps, context));
+              }
+            }
+            return _results1;
+          } else {
             if (isJavaScriptFile(root.molo.paths[name])) {
               scriptPath = root.molo.paths[name];
             } else {
               prePath = root.molo.basePath ? "" + basePath : '';
               pathArray = Object.keys(root.molo.paths);
-              for (_j = 0, _len1 = pathArray.length; _j < _len1; _j++) {
-                p = pathArray[_j];
+              for (_k = 0, _len2 = pathArray.length; _k < _len2; _k++) {
+                p = pathArray[_k];
                 if (root.molo.paths[p] && name.indexOf("" + root.molo.paths[p] + pathSep) === 0) {
                   prePath = root.molo.paths[p];
                 }
               }
               scriptPath = prePath ? "" + prePath + pathSep + i + ".js" : "" + i + ".js";
             }
-            loadScriptFile(scriptPath);
+            return loadScriptFile(scriptPath, function() {});
           }
-          queue[name] = defines;
-          skipFunc = true;
-        }
+        })(i));
       }
-      if (skipFunc) {
-        return void 0;
-      }
-      if (typeof define === 'object' && deps.length === 0) {
-        cache[name] = define;
-      } else {
-        cache[name] = define.apply(context, cacheDeps);
-      }
-      queueList = Object.keys(queue);
-      for (_k = 0, _len2 = queueList.length; _k < _len2; _k++) {
-        q = queueList[_k];
-        maxDeps = queue[q].require.length;
-        curDeps = 0;
-        _ref2 = queue[q].require;
-        for (_l = 0, _len3 = _ref2.length; _l < _len3; _l++) {
-          d = _ref2[_l];
-          depBasename = d.split('!')[0];
-          if (cache[depBasename]) {
-            curDeps++;
-          }
-        }
-        if (curDeps === maxDeps) {
-          modName = q;
-          modDefinition = queue[q];
-          delete queue[q];
-          moloFunc(modName, modDefinition);
-        }
-      }
-      return null;
-    };
-    root.molo = moloFunc;
-    root.molo.scriptLoader = true;
-    root.molo.basePath = '';
-    root.molo.paths = {};
-    root.molo.clear = function() {
-      cache = {};
-      queue = {};
-      return moloStdLib.call(this);
+      return _results;
     };
     root.molo["delete"] = function(name) {
       if (cache[name]) {
@@ -198,42 +158,24 @@
         return delete queue[name];
       }
     };
-    root.molo.plugins = {};
-    root.molo.main = root.require = function(dependencies, callback) {
-      if (typeof dependencies === 'string') {
-        dependencies = [dependencies];
+    root.molo.clear = function() {
+      cache = {};
+      return queue = {};
+    };
+    mainHasBeenCalled = false;
+    root.molo.main = function(name, callback) {
+      var moloHasBeenCalled;
+      if (mainHasBeenCalled) {
+        throw new TypeError('molo.main can only be called once.');
       }
-      if (Array.isArray(dependencies)) {
-        return moloFunc(dependencies, callback);
-      }
+      root.molo.require(name, callback);
+      return moloHasBeenCalled = true;
     };
-    root.module || (root.module = moloFunc);
-    root.define = function(name, deps, defines) {
-      if (!Array.isArray(deps)) {
-        defines = deps;
-        deps = [];
-      }
-      return moloFunc(name, {
-        require: deps,
-        define: defines
-      });
+    return root.unit = function(name, body) {
+      var defines, requires;
+      requires = body.requires, defines = body.defines;
+      return root.molo.define(name, requires, defines);
     };
-    root.define.amd = {
-      jQuery: true
-    };
-    moloStdLib = function() {
-      moloFunc('require', {
-        define: function() {
-          return function(moduleID) {
-            return cache[moduleID];
-          };
-        }
-      });
-      return moloFunc('exports', {
-        define: function() {}
-      });
-    };
-    return moloStdLib();
   })((_ref = typeof module !== "undefined" && module !== null ? module.exports : void 0) != null ? _ref : this);
 
 }).call(this);
