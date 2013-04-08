@@ -14,7 +14,7 @@ Features
 --------
 
 * Automatic dependency management
-* Micro-Framework (1.7 kB minified)
+* Micro-Framework (~1.5 kB minified)
 * Script loading (Scripts load asynchronously if supported)
 * Path management
 * Support for CommonJS environments (e.g. Node.js)
@@ -23,7 +23,6 @@ TODO
 ----
 
 * Unit tests
-* (Better) CommonJS compability
 
 LICENSE
 -------
