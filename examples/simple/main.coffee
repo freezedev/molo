@@ -4,10 +4,10 @@ to take care of the correct order for these
 dependencies yourself
 ###
 
-module 'teststring', -> 'test'
+define 'teststring', -> 'test'
 
-module 'testfun', -> (param) -> alert param
+define 'testfun', -> (param) -> alert param
 
-module 'test',
-  require: ['testfun', 'teststring']
-  define: (testfun, teststring) -> testfun teststring
+define 'test', ['testfun', 'teststring'], (testfun, teststring) -> testfun teststring
+
+require 'test'
