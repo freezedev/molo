@@ -1,3 +1,1 @@
-module 'c',
-  require: ['a', 'b']
-  define: (a, b) -> a + b
+define 'c', ['a', 'b'], (a, b) -> a + b

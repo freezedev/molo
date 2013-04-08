@@ -1,10 +1,7 @@
 (function() {
 
-  module('c', {
-    require: ['a', 'b'],
-    define: function(a, b) {
-      return a + b;
-    }
+  define('c', ['a', 'b'], function(a, b) {
+    return a + b;
   });
 
 }).call(this);

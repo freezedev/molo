@@ -1,1 +1,1 @@
-module 'b', -> 2
+define 'b', -> 2

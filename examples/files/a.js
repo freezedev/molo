@@ -1,6 +1,6 @@
 (function() {
 
-  module('a', function() {
+  define('a', function() {
     return 1;
   });
 
