@@ -1,6 +1,7 @@
 'use strict'
 
 # ES 5 compability functions
+Object.keys or= (o) -> name for own name of o
 Array.isArray or= (a) -> a.push is Array.prototype.push and a.length?
 
 # Check for potential server-side javascript
@@ -14,6 +15,7 @@ hasExtension = (filename, extension) ->
 
 isJavaScriptFile = (filename) -> hasExtension filename, '.js'
 
+pathSep = '/'
 
 # Wrapper function
 do (root = module?.exports ? this) ->
@@ -48,6 +50,22 @@ do (root = module?.exports ? this) ->
       if require
         require filename
         callback()
+
+  appendScriptPath = (name) ->
+    if isJavaScriptFile(root.molo.paths[name])
+      # If the path is complete (e.g. 'js/lib/mymodule.js') take that as a path
+      scriptPath = root.molo.paths[name]
+    else
+      # Prepend the base path if any
+      prePath = if root.molo.basePath then "#{basePath}" else ''
+      pathArray = Object.keys(root.molo.paths)
+
+      # Walk through all paths and check if the module name starts with the path name
+      for p in pathArray
+        if root.molo.paths[p] and name.indexOf("#{root.molo.paths[p]}#{pathSep}") is 0
+          prePath = root.molo.paths[p]
+
+      scriptPath = if prePath then "#{prePath}#{pathSep}#{name}.js" else "#{name}.js"
 
   # Cache and queue definition
   cache = {}
@@ -126,25 +144,14 @@ do (root = module?.exports ? this) ->
               depIndex++
               depsLoaded()
             else
-              root.molo.require i, updateDeps, context
+              if queue[dep]
+                root.molo.require i, updateDeps, context
+              else
+                loadScriptFile appendScriptPath(dep), ->
+                  root.molo.require i, callback, context
         else
-          if isJavaScriptFile(root.molo.paths[name])
-            # If the path is complete (e.g. 'js/lib/mymodule.js') take that as a path
-            scriptPath = root.molo.paths[name]
-          else
-            # Prepend the base path if any
-            prePath = if root.molo.basePath then "#{basePath}" else ''
-            pathArray = Object.keys(root.molo.paths)
-
-            # Walk through all paths and check if the module name starts with the path name
-            for p in pathArray
-              if root.molo.paths[p] and name.indexOf("#{root.molo.paths[p]}#{pathSep}") is 0
-                prePath = root.molo.paths[p]
-
-            scriptPath = if prePath then "#{prePath}#{pathSep}#{i}.js" else "#{i}.js"
-        
-          loadScriptFile scriptPath, ->
-            #root.molo.require i, callback, context
+          loadScriptFile appendScriptPath(i), ->
+            root.molo.require i, callback, context
         
         
   # Additional export functions
