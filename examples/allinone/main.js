@@ -8,21 +8,20 @@ dependencies yourself
 
 (function() {
 
-  module('test', {
-    require: ['testfun!', 'teststring!'],
-    define: function(testfun, teststring) {
-      return testfun(teststring);
-    }
+  define('test', ['testfun', 'teststring'], function(testfun, teststring) {
+    return testfun(teststring);
   });
 
-  module('teststring', function() {
+  define('teststring', function() {
     return 'test';
   });
 
-  module('testfun', function() {
+  define('testfun', function() {
     return function(param) {
       return alert(param);
     };
   });
+
+  require('test');
 
 }).call(this);
