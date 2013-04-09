@@ -18,6 +18,7 @@ Features
 * Script loading (Scripts load asynchronously if supported)
 * Path management
 * Support for CommonJS environments (e.g. Node.js)
+* Plugin functionality
 
 TODO
 ----
