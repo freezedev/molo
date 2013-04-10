@@ -185,3 +185,5 @@ do (root = module?.exports ? this) ->
     {requires, defines} = body
     
     root.molo.define name, requires, defines
+
+  define 'root', -> root
