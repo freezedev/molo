@@ -33,7 +33,7 @@
   pathSep = '/';
 
   (function(root) {
-    var appendScriptPath, cache, loadScriptFile, mainHasBeenCalled, queue;
+    var appendScriptPath, cache, loadScriptFile, mainHasBeenCalled, plugins, queue;
     loadScriptFile = function(filename, callback) {
       var firstScriptElem, locHref, prePath, scriptElem;
       if (!hasModule) {
@@ -84,6 +84,7 @@
     };
     cache = {};
     queue = {};
+    plugins = {};
     root.molo = {};
     root.molo.basePath = '';
     root.molo.paths = {};
@@ -174,12 +175,22 @@
       }
       return _results;
     };
-    root.molo["delete"] = function(name) {
+    root.molo["delete"] = root.molo.invalidate = function(name) {
       if (cache[name]) {
         delete cache[name];
       }
       if (queue[name]) {
         return delete queue[name];
+      }
+    };
+    root.molo.plugins = {
+      add: function(pluginName, pluginFunc) {
+        return plugins[pluginName] = pluginFunc;
+      },
+      "delete": function(p) {
+        if (plugins[p]) {
+          return delete plugins[p];
+        }
       }
     };
     root.molo.clear = function() {
