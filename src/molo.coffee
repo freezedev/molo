@@ -70,6 +70,9 @@ do (root = module?.exports ? this) ->
   # Cache and queue definition
   cache = {}
   queue = {}
+  
+  # Plugin object
+  plugins = {}
 
   # Molo base object
   root.molo = {}
@@ -117,6 +120,8 @@ do (root = module?.exports ? this) ->
     # Abort condition
     return unless Array.isArray name
     
+    
+    
     for i in name
       do (i) ->
         # Get the result of cached dependencies
@@ -159,9 +164,14 @@ do (root = module?.exports ? this) ->
   # Delete a single module from cache, which forces it to
   # reload this module if it comes up as a dependency the
   # next time
-  root.molo.delete = (name) ->
+  root.molo.delete = root.molo.invalidate = (name) ->
     delete cache[name] if cache[name]
     delete queue[name] if queue[name]
+
+  # Plugin connector
+  root.molo.plugins =
+    add: (pluginName, pluginFunc) -> plugins[pluginName] = pluginFunc
+    delete: (p) -> delete plugins[p] if plugins[p]
 
   # Completely clear all caches
   root.molo.clear = ->
@@ -173,7 +183,7 @@ do (root = module?.exports ? this) ->
   mainHasBeenCalled = false
   
   root.molo.main = (name, callback) ->
-    if mainHasBeenCalled then throw new TypeError('molo.main can only be called once.')
+    if mainHasBeenCalled then throw new TypeError 'molo.main can only be called once.'
 
     root.molo.require name, callback
     
