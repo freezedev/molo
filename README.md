@@ -20,11 +20,6 @@ Features
 * Support for CommonJS environments (e.g. Node.js)
 * Plugin functionality
 
-TODO
-----
-
-* Unit tests
-
 LICENSE
 -------
 
