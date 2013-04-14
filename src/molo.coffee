@@ -196,4 +196,4 @@ do (root = module?.exports ? this) ->
     
     root.molo.define name, requires, defines
 
-  define 'root', -> root
+  root.molo.define 'root', -> root
