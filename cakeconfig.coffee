@@ -3,3 +3,4 @@ module.exports =
   target: 'js'
   mainFile: 'molo'
   examples: 'examples'
+  tests: 'test'
