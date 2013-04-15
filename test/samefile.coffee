@@ -1,8 +1,11 @@
 chai = require 'chai'
 chai.should()
-molo = require '../js/molo'
+{molo} = require '../js/molo'
 
 describe 'molo', ->
+  # Clear cache after each test
+  afterEach -> molo.clear()
+  
   it 'All definitions in one (in order)', ->
     molo.define 'a', -> 1
     molo.define 'b', -> 2
