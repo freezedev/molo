@@ -183,6 +183,8 @@ do (root = module?.exports ? this) ->
   mainHasBeenCalled = false
   
   root.molo.main = (name, callback) ->
+    [name, callback] = ['main', name] if typeof name is 'function'
+    
     if mainHasBeenCalled then throw new TypeError 'molo.main can only be called once.'
 
     root.molo.require name, callback
