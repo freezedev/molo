@@ -211,7 +211,7 @@
       requires = body.requires, defines = body.defines;
       return root.molo.define(name, requires, defines);
     };
-    return define('root', function() {
+    return root.molo.define('root', function() {
       return root;
     });
   })((_ref = typeof module !== "undefined" && module !== null ? module.exports : void 0) != null ? _ref : this);
