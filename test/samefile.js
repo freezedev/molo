@@ -5,9 +5,12 @@
 
   chai.should();
 
-  molo = require('../js/molo');
+  molo = require('../js/molo').molo;
 
   describe('molo', function() {
+    afterEach(function() {
+      return molo.clear();
+    });
     it('All definitions in one (in order)', function() {
       molo.define('a', function() {
         return 1;
