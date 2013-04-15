@@ -5,7 +5,7 @@
 
   chai.should();
 
-  molo = require('./js/molo');
+  molo = require('../js/molo');
 
   describe('molo', function() {
     it('All definitions in one (in order)', function() {
