@@ -5,7 +5,7 @@ require 'es6-shim'
 zlib = require 'zlib'
 gzip = zlib.createGzip()
 
-{source, target, mainFile, examples} = require './cakeconfig'
+{source, target, mainFile, examples, tests} = require './cakeconfig'
 
 task 'build:debug', -> 
   compile "#{source}/#{mainFile}.coffee", "#{target}/#{mainFile}.js"
@@ -18,11 +18,11 @@ task 'build:production', ->
           fs.writeFile "#{target}/#{mainFile}.min.js.gz", buf
 
 task 'build:examples', ->
-  exampleFolderArray = fs.readdirSync("#{examples}")
+  exampleFolderArray = fs.readdirSync "#{examples}"
 
   for i in exampleFolderArray
     fileArray = []
-    exampleFolderContent = fs.readdirSync(path.join(examples, i))
+    exampleFolderContent = fs.readdirSync path.join(examples, i)
 
     fileArray = do -> 
       for j in exampleFolderContent
@@ -30,7 +30,10 @@ task 'build:examples', ->
 
     if fileArray.length > 0 then compile "#{examples}/#{i}/*.coffee", "#{examples}/#{i}/*"   
 
+task 'build:test', -> compile "#{tests}/*.coffee", "#{tests}/*"   
+
 task 'build', ->
   invoke 'build:debug'
   invoke 'build:production'
   invoke 'build:examples'
+  invoke 'build:test'
