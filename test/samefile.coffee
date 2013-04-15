@@ -1,6 +1,6 @@
 chai = require 'chai'
 chai.should()
-molo = require './js/molo'
+molo = require '../js/molo'
 
 describe 'molo', ->
   it 'All definitions in one (in order)', ->
