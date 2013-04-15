@@ -199,7 +199,10 @@
     };
     mainHasBeenCalled = false;
     root.molo.main = function(name, callback) {
-      var moloHasBeenCalled;
+      var moloHasBeenCalled, _ref1;
+      if (typeof name === 'function') {
+        _ref1 = ['main', name], name = _ref1[0], callback = _ref1[1];
+      }
       if (mainHasBeenCalled) {
         throw new TypeError('molo.main can only be called once.');
       }
