@@ -126,8 +126,14 @@ do (root = module?.exports ? this) ->
     executeCallback = -> callback.apply @, reqArgs if reqArgIndex is name.length
     
     # Walk through all requires
-    for i in name
-      do (i) ->
+    for i, num in name
+      do (i, num) ->
+        if cache[i]
+          reqArgs[num] = cache[i]
+          reqArgIndex++
+          executeCallback()
+          return
+        
         # Get the result of cached dependencies
         cacheDeps = []
                 
@@ -139,9 +145,11 @@ do (root = module?.exports ? this) ->
             if depIndex is depLength
               cache[i] = queue[i].factory.apply context, cacheDeps
               
-          updateDeps = ->
-            depIndex++
-            depsLoaded()
+          updateDeps = (item) ->
+            if item
+              cacheDeps.push item
+              depIndex++
+              depsLoaded()
           
           for dep in queue[i].dependencies
             # Need to check for hasOwnProperty
@@ -149,15 +157,9 @@ do (root = module?.exports ? this) ->
             # because a module could have undefined, null, 0 or an empty string
             # as its export value
             if Object.hasOwnProperty.call cache, dep
-              cacheDeps.push cache[dep]
-              depIndex++
-              depsLoaded()
+              updateDeps cache[dep]
             else
-              if queue[dep]
-                root.molo.require dep, updateDeps, context
-              else
-                loadScriptFile appendScriptPath(dep), ->
-                  root.molo.require i, callback, context
+              root.molo.require dep, updateDeps, context
         else
           loadScriptFile appendScriptPath(i), ->
             root.molo.require i, callback, context
