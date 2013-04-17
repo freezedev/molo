@@ -132,8 +132,10 @@
       reqArgs = [];
       reqArgIndex = 0;
       executeCallback = function() {
-        if (reqArgIndex === name.length) {
-          return callback.apply(this, reqArgs);
+        if (callback) {
+          if (reqArgIndex === name.length) {
+            return callback.apply(this, reqArgs);
+          }
         }
       };
       _results = [];
@@ -176,7 +178,7 @@
             return _results1;
           } else {
             return loadScriptFile(appendScriptPath(i), function() {
-              return root.molo.require(i, callback, context);
+              return root.molo.require(i, executeCallback, context);
             });
           }
         })(i, num));
