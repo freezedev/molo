@@ -119,7 +119,7 @@
       };
     };
     root.molo.require = root.require = function(name, callback, context) {
-      var executeCallback, i, num, reqArgIndex, reqArgs, _i, _len, _results;
+      var dep, depLength, executeCallback, i, key, num, reqArgIndex, reqArgs, resolveDeps, value, _fn, _i, _len, _results;
       if (context == null) {
         context = root.molo.defaultContext;
       }
@@ -138,52 +138,80 @@
           }
         }
       };
-      _results = [];
+      _fn = function(i, num) {
+        var cacheDeps, dep, depIndex, depLength, depsLoaded, updateDeps, _j, _len1, _ref1, _results;
+        if (cache[i]) {
+          reqArgs[num] = cache[i];
+          reqArgIndex++;
+          executeCallback();
+          return;
+        }
+        cacheDeps = [];
+        if (queue[i]) {
+          depIndex = 0;
+          depLength = queue[i].dependencies.length;
+          depsLoaded = function() {
+            if (depIndex === depLength) {
+              return cache[i] = queue[i].factory.apply(context, cacheDeps);
+            }
+          };
+          updateDeps = function(item) {
+            if (item) {
+              cacheDeps.push(item);
+              depIndex++;
+              return depsLoaded();
+            }
+          };
+          _ref1 = queue[i].dependencies;
+          _results = [];
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            dep = _ref1[_j];
+            if (Object.hasOwnProperty.call(cache, dep)) {
+              _results.push(updateDeps(cache[dep]));
+            } else {
+              _results.push(root.molo.require(dep, updateDeps, context));
+            }
+          }
+          return _results;
+        } else {
+          return loadScriptFile(appendScriptPath(i), function() {
+            return root.molo.require(i);
+          });
+        }
+      };
       for (num = _i = 0, _len = name.length; _i < _len; num = ++_i) {
         i = name[num];
-        _results.push((function(i, num) {
-          var cacheDeps, dep, depIndex, depLength, depsLoaded, updateDeps, _j, _len1, _ref1, _results1;
-          if (cache[i]) {
-            reqArgs[num] = cache[i];
-            reqArgIndex++;
-            executeCallback();
-            return;
-          }
-          cacheDeps = [];
-          if (queue[i]) {
-            depIndex = 0;
-            depLength = queue[i].dependencies.length;
-            depsLoaded = function() {
-              if (depIndex === depLength) {
-                return cache[i] = queue[i].factory.apply(context, cacheDeps);
-              }
-            };
-            updateDeps = function(item) {
-              if (item) {
-                cacheDeps.push(item);
-                depIndex++;
-                return depsLoaded();
-              }
-            };
-            _ref1 = queue[i].dependencies;
+        _fn(i, num);
+      }
+      resolveDeps = [];
+      if (Object.keys(queue).length > 0) {
+        _results = [];
+        for (key in queue) {
+          value = queue[key];
+          depLength = value.dependencies.length;
+          _results.push((function() {
+            var _j, _len1, _ref1, _results1;
+            _ref1 = value.dependencies;
             _results1 = [];
             for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
               dep = _ref1[_j];
-              if (Object.hasOwnProperty.call(cache, dep)) {
-                _results1.push(updateDeps(cache[dep]));
+              if (cache[dep]) {
+                resolveDeps.push(cache[dep]);
+                if (depLength === resolveDeps.length) {
+                  cache[key] = value.factory.apply(context, resolveDeps);
+                  _results1.push(delete queue[key]);
+                } else {
+                  _results1.push(void 0);
+                }
               } else {
-                _results1.push(root.molo.require(dep, updateDeps, context));
+                _results1.push(void 0);
               }
             }
             return _results1;
-          } else {
-            return loadScriptFile(appendScriptPath(i), function() {
-              return root.molo.require(i, executeCallback, context);
-            });
-          }
-        })(i, num));
+          })());
+        }
+        return _results;
       }
-      return _results;
     };
     root.molo["delete"] = root.molo.invalidate = function(name) {
       if (cache[name]) {
