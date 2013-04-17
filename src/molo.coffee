@@ -47,7 +47,7 @@ do (root = module?.exports ? this) ->
       firstScriptElem.parentNode.insertBefore scriptElem, firstScriptElem
     else
       # Make sure require is available
-      if require
+      if require?
         require filename
         callback()
 
