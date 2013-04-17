@@ -119,7 +119,7 @@
       };
     };
     root.molo.require = root.require = function(name, callback, context) {
-      var i, _i, _len, _results;
+      var executeCallback, i, reqArgIndex, reqArgs, _i, _len, _results;
       if (context == null) {
         context = root.molo.defaultContext;
       }
@@ -129,6 +129,13 @@
       if (!Array.isArray(name)) {
         return;
       }
+      reqArgs = [];
+      reqArgIndex = 0;
+      executeCallback = function() {
+        if (reqArgIndex === name.length) {
+          return callback.apply(this, reqArgs);
+        }
+      };
       _results = [];
       for (_i = 0, _len = name.length; _i < _len; _i++) {
         i = name[_i];
@@ -157,7 +164,7 @@
                 _results1.push(depsLoaded());
               } else {
                 if (queue[dep]) {
-                  _results1.push(root.molo.require(i, updateDeps, context));
+                  _results1.push(root.molo.require(dep, updateDeps, context));
                 } else {
                   _results1.push(loadScriptFile(appendScriptPath(dep), function() {
                     return root.molo.require(i, callback, context);
