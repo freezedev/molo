@@ -123,7 +123,9 @@ do (root = module?.exports ? this) ->
     reqArgs = []
     reqArgIndex = 0
     
-    executeCallback = -> callback.apply @, reqArgs if reqArgIndex is name.length
+    executeCallback = ->
+      if callback 
+        callback.apply @, reqArgs if reqArgIndex is name.length
     
     # Walk through all requires
     for i, num in name
@@ -162,7 +164,8 @@ do (root = module?.exports ? this) ->
               root.molo.require dep, updateDeps, context
         else
           loadScriptFile appendScriptPath(i), ->
-            root.molo.require i, callback, context
+            
+            root.molo.require i, executeCallback, context
         
         
   # Additional export functions
