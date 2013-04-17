@@ -120,8 +120,12 @@ do (root = module?.exports ? this) ->
     # Abort condition
     return unless Array.isArray name
     
+    reqArgs = []
+    reqArgIndex = 0
     
+    executeCallback = -> callback.apply @, reqArgs if reqArgIndex is name.length
     
+    # Walk through all requires
     for i in name
       do (i) ->
         # Get the result of cached dependencies
@@ -150,7 +154,7 @@ do (root = module?.exports ? this) ->
               depsLoaded()
             else
               if queue[dep]
-                root.molo.require i, updateDeps, context
+                root.molo.require dep, updateDeps, context
               else
                 loadScriptFile appendScriptPath(dep), ->
                   root.molo.require i, callback, context
