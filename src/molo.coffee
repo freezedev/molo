@@ -164,8 +164,26 @@ do (root = module?.exports ? this) ->
               root.molo.require dep, updateDeps, context
         else
           loadScriptFile appendScriptPath(i), ->
-            
-            root.molo.require i, executeCallback, context
+            root.molo.require i
+    
+    # Resolve queue if possible    
+    #console.log cache
+    #console.log queue
+     
+    resolveDeps = []
+    
+    if Object.keys(queue).length > 0
+      for key, value of queue
+        depLength = value.dependencies.length
+        for dep in value.dependencies
+          if cache[dep]
+            resolveDeps.push cache[dep]
+            if depLength is resolveDeps.length
+              cache[key] = value.factory.apply context, resolveDeps
+              delete queue[key]
+              
+    #console.log cache
+    #console.log queue
         
         
   # Additional export functions
