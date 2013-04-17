@@ -119,7 +119,7 @@
       };
     };
     root.molo.require = root.require = function(name, callback, context) {
-      var executeCallback, i, reqArgIndex, reqArgs, _i, _len, _results;
+      var executeCallback, i, num, reqArgIndex, reqArgs, _i, _len, _results;
       if (context == null) {
         context = root.molo.defaultContext;
       }
@@ -137,10 +137,16 @@
         }
       };
       _results = [];
-      for (_i = 0, _len = name.length; _i < _len; _i++) {
-        i = name[_i];
-        _results.push((function(i) {
+      for (num = _i = 0, _len = name.length; _i < _len; num = ++_i) {
+        i = name[num];
+        _results.push((function(i, num) {
           var cacheDeps, dep, depIndex, depLength, depsLoaded, updateDeps, _j, _len1, _ref1, _results1;
+          if (cache[i]) {
+            reqArgs[num] = cache[i];
+            reqArgIndex++;
+            executeCallback();
+            return;
+          }
           cacheDeps = [];
           if (queue[i]) {
             depIndex = 0;
@@ -150,26 +156,21 @@
                 return cache[i] = queue[i].factory.apply(context, cacheDeps);
               }
             };
-            updateDeps = function() {
-              depIndex++;
-              return depsLoaded();
+            updateDeps = function(item) {
+              if (item) {
+                cacheDeps.push(item);
+                depIndex++;
+                return depsLoaded();
+              }
             };
             _ref1 = queue[i].dependencies;
             _results1 = [];
             for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
               dep = _ref1[_j];
               if (Object.hasOwnProperty.call(cache, dep)) {
-                cacheDeps.push(cache[dep]);
-                depIndex++;
-                _results1.push(depsLoaded());
+                _results1.push(updateDeps(cache[dep]));
               } else {
-                if (queue[dep]) {
-                  _results1.push(root.molo.require(dep, updateDeps, context));
-                } else {
-                  _results1.push(loadScriptFile(appendScriptPath(dep), function() {
-                    return root.molo.require(i, callback, context);
-                  }));
-                }
+                _results1.push(root.molo.require(dep, updateDeps, context));
               }
             }
             return _results1;
@@ -178,7 +179,7 @@
               return root.molo.require(i, callback, context);
             });
           }
-        })(i));
+        })(i, num));
       }
       return _results;
     };
