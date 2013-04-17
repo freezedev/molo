@@ -60,7 +60,7 @@
         firstScriptElem = root.document.getElementsByTagName('script')[0];
         return firstScriptElem.parentNode.insertBefore(scriptElem, firstScriptElem);
       } else {
-        if (require) {
+        if (typeof require !== "undefined" && require !== null) {
           require(filename);
           return callback();
         }
