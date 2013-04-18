@@ -146,6 +146,7 @@ do (root = module?.exports ? this) ->
           depsLoaded = ->
             if depIndex is depLength
               cache[i] = queue[i].factory.apply context, cacheDeps
+              delete queue[i]
               
           updateDeps = (item) ->
             if item
@@ -181,6 +182,7 @@ do (root = module?.exports ? this) ->
             if depLength is resolveDeps.length
               cache[key] = value.factory.apply context, resolveDeps
               delete queue[key]
+              root.molo.require key
               
     #console.log cache
     #console.log queue
