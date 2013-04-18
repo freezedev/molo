@@ -152,7 +152,8 @@
           depLength = queue[i].dependencies.length;
           depsLoaded = function() {
             if (depIndex === depLength) {
-              return cache[i] = queue[i].factory.apply(context, cacheDeps);
+              cache[i] = queue[i].factory.apply(context, cacheDeps);
+              return delete queue[i];
             }
           };
           updateDeps = function(item) {
@@ -199,7 +200,8 @@
                 resolveDeps.push(cache[dep]);
                 if (depLength === resolveDeps.length) {
                   cache[key] = value.factory.apply(context, resolveDeps);
-                  _results1.push(delete queue[key]);
+                  delete queue[key];
+                  _results1.push(root.molo.require(key));
                 } else {
                   _results1.push(void 0);
                 }
