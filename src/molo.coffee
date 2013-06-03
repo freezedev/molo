@@ -1,8 +1,9 @@
 'use strict'
 
 # ES 5 compability functions
-Object.keys or= (o) -> name for own name of o
-Array.isArray or= (a) -> a.push is Array.prototype.push and a.length?
+do ->
+  Object.keys ?= (o) -> name for own name of o
+  Array.isArray ?= (a) -> a.push is Array.prototype.push and a.length?
 
 # Check for potential server-side javascript
 hasModule = module?.exports?
@@ -13,8 +14,10 @@ hasExtension = (filename, extension) ->
   
   filename.lastIndexOf(extension) is filename.length - extension
 
+# Check if it's a JavaScript file
 isJavaScriptFile = (filename) -> hasExtension filename, '.js'
 
+# Path seperator
 pathSep = '/'
 
 # Wrapper function
@@ -70,6 +73,7 @@ do (root = module?.exports ? this) ->
   # Cache and queue definition
   cache = {}
   queue = {}
+  waitQueue = {}
   
   # Plugin object
   plugins = {}
@@ -110,7 +114,10 @@ do (root = module?.exports ? this) ->
       return
       
     queue[name] = {dependencies, factory}
-    
+  
+  # Compability flag
+  root.molo.define.amd = root.define.amd = true  
+  #root.molo.define.umd = root.define.umd = false  
     
   # Require function
   root.molo.require = root.require = (name, callback, context = root.molo.defaultContext) ->
@@ -119,6 +126,9 @@ do (root = module?.exports ? this) ->
     
     # Abort condition
     return unless Array.isArray name
+    
+    # If no callback defined, single module and module in cache, return it directly
+    return cache[name] if name.length is 1 and not callback? and Object.hasOwnProperty.call(cache, name[0])
     
     reqArgs = []
     reqArgIndex = 0
@@ -129,64 +139,81 @@ do (root = module?.exports ? this) ->
     
     # Walk through all requires
     for i, num in name
-      do (i, num) ->
-        if cache[i]
-          reqArgs[num] = cache[i]
-          reqArgIndex++
-          executeCallback()
-          return
-        
-        # Get the result of cached dependencies
-        cacheDeps = []
-                
-        if queue[i]
-          depIndex = 0
-          depLength = queue[i].dependencies.length
-          
-          depsLoaded = ->
-            if depIndex is depLength
-              cache[i] = queue[i].factory.apply context, cacheDeps
-              delete queue[i]
+      if cache[i]
+        reqArgs[num] = cache[i]
+        reqArgIndex++
+        executeCallback()
+        return
+      
+      # Get the result of cached dependencies
+      cacheDeps = []
               
-          updateDeps = (item) ->
-            if item
-              cacheDeps.push item
-              depIndex++
-              depsLoaded()
-          
-          for dep in queue[i].dependencies
-            # Need to check for hasOwnProperty
-            # Checking for cache[i] is not strict enough
-            # because a module could have undefined, null, 0 or an empty string
-            # as its export value
-            if Object.hasOwnProperty.call cache, dep
-              updateDeps cache[dep]
-            else
-              root.molo.require dep, updateDeps, context
-        else
-          loadScriptFile appendScriptPath(i), ->
-            root.molo.require i
-    
-    # Resolve queue if possible    
-    #console.log cache
-    #console.log queue
-     
-    resolveDeps = []
-    
-    if Object.keys(queue).length > 0
-      for key, value of queue
-        depLength = value.dependencies.length
-        for dep in value.dependencies
-          if cache[dep]
-            resolveDeps.push cache[dep]
-            if depLength is resolveDeps.length
-              cache[key] = value.factory.apply context, resolveDeps
-              delete queue[key]
-              root.molo.require key
-              
-    #console.log cache
-    #console.log queue
+      if queue[i]
+        depIndex = 0
+        depLength = queue[i].dependencies.length
         
+        depsLoaded = ->
+          if depIndex is depLength
+            cache[i] = queue[i].factory.apply context, cacheDeps
+            delete queue[i]
+            
+        updateDeps = (item) ->
+          if item
+            cacheDeps.push item
+            depIndex++
+            depsLoaded()
+        
+        for dep in queue[i].dependencies
+          # Need to check for hasOwnProperty
+          # Checking for cache[i] is not strict enough
+          # because a module could have undefined, null, 0 or an empty string
+          # as its export value
+          if Object.hasOwnProperty.call cache, dep
+            updateDeps cache[dep]
+          else
+            root.molo.require dep, updateDeps, context
+      else
+        loadScriptFile appendScriptPath(i), -> root.molo.require i
+    
+    
+    
+
+    walkThroughQueue = (queueObj) ->
+      # Resolve queue if possible
+      #resolveDeps = []
+      
+      for key, value of queueObj
+        root.molo.require key
+      
+      #if Object.keys(queueObj).length > 0
+      #  for key, value of queueObj
+      #    return unless key and value
+          
+          
+          
+          #console.log 'walkThroughQueue'
+          #console.log key
+          #console.log value
+          
+          #depLength = value.dependencies.length
+          #for dep in value.dependencies
+          #  if cache[dep]
+          #    resolveDeps.push cache[dep]
+          #    if depLength is resolveDeps.length
+          #      cache[key] = value.factory.apply context, resolveDeps
+          #      delete queueObj[key] if queueObj[key]
+          #      #delete waitQueue[key] if waitQueue[key]
+          #    #else
+          #    #  waitQueue[key] = queueObj[key]
+      
+    walkThroughQueue queue
+    #walkThroughQueue waitQueue
+
+    
+    console.log 'Queue & Cache & waitQueue'
+    console.log queue
+    console.log cache
+    console.log waitQueue
         
   # Additional export functions
   
@@ -227,4 +254,4 @@ do (root = module?.exports ? this) ->
     
     root.molo.define name, requires, defines
 
-  root.molo.define 'root', -> root
+  #root.molo.define 'root', -> root
